@@ -22,12 +22,12 @@ from PIL import Image, ImageDraw, ImageFont
 
 IMAGE_WIDTH = 2500
 IMAGE_HEIGHT = 2500
-FONTSIZE = 150
-CAPTION_VERTICAL_SPACING = 5
+FONTSIZE = 50
+CAPTION_VERTICAL_SPACING = 10
 
 # this is the key for which number codes go with which species
 # eventually I'd like this to be dynamic and read a reference sheet but for now it's hardcoded
-SPECIES_KEY = {1:'B. subtilis 3610', 2:'B. subtilis PtapA-YFP',4:'B. atrophaeus', 5:'B. vallismortis', 7:'B. licheniformis', 9:'B. megaterium', 12:'B. lentus', 13:'B. cereus WT', 14:'B. cereus delta(tclE-H)', 15:'B. clausii'}
+SPECIES_KEY = {1:'B. subtilis 3610', 2:'B. subtilis PtapA-YFP',4:'B. atrophaeus', 5:'B. vallismortis', 7:'B. licheniformis', 9:'B. megaterium', 12:'B. lentus', 13:'B. cereus WT', 14:'B. cereus delta(tclE-H)', 15:'B. clausii', 3:'B. mojavensis', 3:'B. mojavensis', 387:'RO-NN-1', 389:'DV1-B-1' }
 
 # start up the font object for PIL so we can draw text
 font =  ImageFont.truetype("arial.ttf", FONTSIZE)
@@ -64,6 +64,8 @@ class ColonyImage:
 		#use form "mix_[species a]:[species b]"
 		
 		#if it's not a string, just use the colony name straight
+		if self.colony[-1].isalpha() is True:
+			self.colony = self.colony[:-1]
 		if self.colony.isdigit() is False:
 			# I think I might need to manage the input so it doesn't have flanking quote markes
 			members = [int(each) for each in self.colony.split(",",1)]
@@ -222,12 +224,11 @@ def draw_images(colony_list, direction):
 		# put box below image, add filename text
 		
 		# later, abstract this out and put it in graphic_library
-		
 		try:
-			wrapped_caption = wrap_text(colony_list[count].caption, IMAGE_WIDTH)
+			wrapped_caption = wrap_text(colony_list[count].caption, each_img.size[0])
 			# IT'S A PIL OBJECT NOT MY IMAGE CLASS OBJECT
 		except:
-			wrapped_caption = wrap_text(colony_list[count].filename, IMAGE_WIDTH)
+			wrapped_caption = wrap_text(colony_list[count].filename, each_img.size[0])
 			# IT'S A PIL OBJECT NOT MY IMAGE CLASS OBJECT
 		
 		total_caption_height = 0
@@ -306,7 +307,10 @@ colony_list = []
 
 for line in colony_sheet:
 	if line.rstrip() is "":
-		draw_images(colony_list,"horizontal")
+		try:
+			draw_images(colony_list,"horizontal")
+		except:
+			print("couldn't print the image, sorry")
 		# clear the colony list
 		colony_list = []
 		continue
