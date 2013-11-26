@@ -14,7 +14,6 @@
 # expected command line usage is "python colony_poster.py spreadsheet.txt"
 
 # BUGS:
-# I don't think it's wrapping the caption for fluorescent images correctly
 # the resize checks are weird
 
 import sys
@@ -53,6 +52,12 @@ class ColonyImage:
 		self.mix_name = None
 		self.set_real_name = None
 		self.caption = caption
+		
+		# I intend to make it so that the functions for this class are agnostic of the input formatting
+		# see http://stackoverflow.com/questions/6735583/treat-value-of-string-as-an-attribute-name
+		# for an example of what I need to implement
+		# I need to use setattr to set the class variables
+		# also i need to create a global variable describing the column names
 		
 	def generate_filename(self):
 		# look at colony value, reference species key
