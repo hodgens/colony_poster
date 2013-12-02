@@ -1,9 +1,9 @@
 # This script takes an input file listing image filenames and metadata and creates composite pictures of them
-# The script expects files to have the following formatting:
-# For human use purposes, the first line is column headings
+# The script expects tab-delimited files
+# The first column must always be the filename, but columns after that can be varied as needed
+
 # Make sure the first character is # so it knows to skip that line
-# Columns: [imagename, replicate, colony, set, day, media, rise, method (what kind of microscopy)]
-# rise will be used to add a scale bar?
+
 
 # Separate sets of images are noted by a line break between the sets.
 # THERE NEED TO BE TWO SPACES AT THE END OF THE FILE
@@ -15,6 +15,9 @@
 
 # BUGS:
 # the resize checks are weird
+
+# TODO:
+# finish up making this more flexible w/r/t metadata input files
 
 import sys
 from PIL import Image, ImageDraw, ImageFont
@@ -305,6 +308,7 @@ def draw_images(colony_list, direction):
 			count += 1
 		vertical_image.save(colony_list[0].filename)
 		
+
 # phew, that's out of the way. now we can actually do stuff with that stuff we defined
 
 # now we're going to start paging through the input document to find the images we need to tile
