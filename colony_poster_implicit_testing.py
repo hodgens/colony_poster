@@ -21,10 +21,13 @@ from PIL import Image, ImageDraw, ImageFont
 import linecache
 import re
 
+# these are also the dimensions it will crop the original pictures down to
+# so make sure this encompasses the region of interest in each picture
 IMAGE_WIDTH = 2500
 IMAGE_HEIGHT = 2500
 FONTSIZE = 50
 CAPTION_VERTICAL_SPACING = 10
+RESIZED_LENGTH = 1000
 
 # this is the key for which number codes go with which species
 # eventually I'd like this to be dynamic and read a reference sheet but for now it's hardcoded
@@ -47,7 +50,7 @@ def find_species_name(species_number):
 	try:
 		output = SPECIES_KEY[species_number]
 	except:
-		output = False
+		output = species_number
 	return output
 
 # so we don't have to reference the input sheet constantly, let's make a class to hold metadata
@@ -103,28 +106,21 @@ class TestImage:
 
 		# make a filename, and try to use the expanded names of things
 		# if you can't, use the abbreviated coded version
-		
 		# also let's build a regex search pattern ahead of time
 		keyword = re.compile("colony", flags=re.IGNORECASE)
-		try:
-			# set output filename with species names
-		except:			
-			# set output filename with species numbers
-			
-		# make a caption, try to use expanded names, if can't, use codes
-		try:
-			# set caption, replacing numbers with species names
-			# FUTURE EFFORTS : make it so this checks a run flag instead
-			for each_heading in columns_to_describe:
-				if keyword.search(each_heading) is not None:
-					name = find_species_name(getattr(self,each_heading))
-					setattr(self, each_heading, name)
-			
-			self.output_filename = " ".join([" ".join([each, getattr(self, each)]) for each in columns_to_describe])
-		except:
-			# set caption exactly as it's given in the input file
-			self.output_filename = " ".join([" ".join([each, getattr(self, each)]) for each in columns_to_describe])
-			# " ".join([" ".join([each,getattr(test,each)]) for each in types])
+		
+		for each_heading in COLUMN_HEADINGS:
+			if keyword.search(each_heading) is not None:
+				name = find_species_name(getattr(self,each_heading))
+				setattr(self, each_heading, name)
+
+		# set output filename
+		self.output_filename = " ".join([" ".join([each, getattr(self, each)]) for each in COLUMN_HEADINGS])
+	
+		# set caption
+		self.caption = " ".join([" ".join([each, getattr(self, each)]) for each in columns_to_describe])
+
+		# " ".join([" ".join([each,getattr(test,each)]) for each in types])
 
 # the following class is kept around for reference and will be removed later
 class ColonyImage:
@@ -276,19 +272,19 @@ def draw_images(colony_list, direction):
 		
 		# these 2500 and 1000 values are hardcoded for now but might be made dynamic later
 		# 2500x2500 is a good size that retains the central colony features of our digicam image at full size taken with the camera stage at 32.5 cm above the table
-		if width > 2500 and height > 2500:
-			#crop it
+		if width > IMAGE_WIDTH and height > IMAGE_HEIGHT:
+			# crop it to square, centered in the original picture
 			top = int((height - IMAGE_HEIGHT)/2)
 			bottom = int(top + IMAGE_HEIGHT)
 			left = int((width - IMAGE_WIDTH)/2)
 			right = int(left + IMAGE_WIDTH)
 			new_picture = new_picture.crop((left,top,right,bottom))
-		elif width > 2500 and height < 2500:
+		elif width > IMAGE_WIDTH and height < IMAGE_HEIGHT:
 			# crop to height
 			left = int((width - height)/2)
 			right = int(left + height)
 			new_picture = new_picture.crop((left,0,right,0))
-		elif width < 2500 and height > 2500:
+		elif width < IMAGE_WIDTH and height > IMAGE_HEIGHT:
 			# crop to width
 			top = int((height - width)/2)
 			bottom = int(top + width)
@@ -297,13 +293,13 @@ def draw_images(colony_list, direction):
 		# resize the pictures so our composites aren't mega huge
 		# I think I fucked up here, I think it should be >=, not <, but I get weird results when I change it
 		# bugfix later
-		if width < 2500 and height == width:
-			new_width = int(float(1000))
-			new_height = int(float(1000))
+		if width < IMAGE_WIDTH and height == width:
+			new_width = int(float(RESIZED_LENGTH))
+			new_height = int(float(RESIZED_LENGTH))
 			new_picture = new_picture.resize((new_width,new_height),Image.ANTIALIAS)
-		elif width < 2500 and height != width:
+		elif width < IMAGE_WIDTH and height != width:
 			ratio = height / width
-			new_width = int(float(1000))
+			new_width = int(float(RESIZED_LENGTH))
 			new_height = int(ratio * new_width)
 			new_picture = new_picture.resize((new_width,new_height),Image.ANTIALIAS)
 		image_list.append(new_picture)
@@ -419,24 +415,11 @@ for line in colony_sheet:
 	if line[0] is "#":
 		continue
 
-	# manage the line, split it up into proper variables
-	# WARNING, THIS IS A TROUBLE SPOT, IT PRESUPPOSES ATTRIBUTES
-	line = line.rstrip()
-	temporary_list = line.split("\t")
-	image_name = temporary_list[0]
-	replicate = temporary_list[1]
-	colony = temporary_list[2]
-	colony_no_quotes = [each for each in colony if each not in '"']
-	colony = ''.join(colony_no_quotes)
-	colony_set = temporary_list[3]
-	colony_set_no_quotes = [each for each in colony_set if each not in '"']
-	colony_set = ''.join(colony_set_no_quotes)
-	day = temporary_list[4]
-	media = temporary_list[5]
-	rise = temporary_list[6]
-	method = temporary_list[7]
+	# manage the line, split it up
+	line_contents = line.rstrip().split("\t")
 	
 	# construct the new filename from all those variables you just split up
-	new_image = ColonyImage(image_name = image_name, replicate = replicate, colony = colony, day = day, media = media, rise = rise, colony_set = colony_set, method = method)
+	new_image = TestImage(headings = COLUMN_HEADINGS, contents = line_contents)
+	
 	new_image.generate_filename()
 	colony_list.append(new_image)
